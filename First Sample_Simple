@@ -1,0 +1,46 @@
+1. Retrieving Data:
+retrieve a list of all transactions from a table named "Transactions."
+
+SELECT * FROM Transactions;
+
+2. Filtering Data:
+get all transactions of a particular account:
+
+SELECT * FROM Transactions WHERE account_id = 'ABC123';
+
+
+3. Aggregating Data:
+total amount of transactions for a specific account:
+
+SELECT account_id, SUM(amount) AS total_amount
+FROM Transactions
+WHERE account_id = 'ABC123'
+GROUP BY account_id;
+
+4. Joining Tables:
+retrieve a list of transactions with account names:
+
+
+SELECT T.transaction_id, T.amount, A.account_name
+FROM Transactions T
+JOIN Accounts A ON T.account_id = A.account_id;
+
+5. Subqueries:
+finding accounts with transactions above the average:
+
+
+SELECT account_id, account_name
+FROM Accounts
+WHERE account_id IN (
+    SELECT account_id
+    FROM Transactions
+    GROUP BY account_id
+    HAVING AVG(amount) > (SELECT AVG(amount) FROM Transactions)
+);
+
+6. Date Manipulation:
+filter transactions by specific date ranges. For example, to get transactions within a specific month:
+
+
+SELECT * FROM Transactions
+WHERE transaction_date >= '2023-07-01' AND transaction_date < '2023-08-01';
