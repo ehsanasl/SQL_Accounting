@@ -1,0 +1,80 @@
+-------------SQL Accounting Portfolio-------------------
+Welcome to my SQL Accounting Portfolio, where I showcase my skills and expertise in SQL database management and querying in the context of accounting and financial data.
+In this portfolio, I've designed a set of complex SQL queries and data analysis tasks that revolve around managing accounting records, generating financial reports, and extracting valuable insights from financial data.
+As businesses and organizations rely heavily on financial data for decision-making, the ability to work with SQL databases effectively is crucial for professionals in accounting, finance, and data analysis roles.
+Throughout this portfolio, I've explored various SQL concepts and techniques to address real-world accounting challenges.
+
+-------------Topics Covered-------------------
+Data Modeling: Understanding how to design a database schema tailored to accounting needs, including tables for employees, salaries, departments, job titles, and training records.
+Data Manipulation: Performing data insertion, updating, and deletion to manage employee records, salaries, and other financial data.
+Data Retrieval: Writing complex SQL queries to extract meaningful information, such as identifying top and bottom earners, calculating total salary expenses, and finding employees with significant salary changes.
+Data Analysis: Utilizing SQL aggregation functions to generate financial reports, calculate key performance metrics, and analyze turnover rates within departments.
+Window Functions: Employing advanced SQL window functions to compute running totals, ranks, and percentiles for financial data analysis.
+Common Table Expressions (CTEs): Simplifying complex queries and making them more readable using CTEs, including recursive CTEs for hierarchical data.
+Error Handling: Demonstrating how to handle errors gracefully using TRY...CATCH blocks in SQL Server.
+Stored Procedures and Functions: Creating and utilizing stored procedures and functions for repetitive tasks and custom calculations, such as interest rate computation.
+Database Architecture: Gaining a general understanding of database architectures, including OLTP (Online Transaction Processing) and OLAP (Online Analytical Processing) systems.
+Indexing: Knowing when and how to use different types of indexing for performance optimization in SQL.
+Date and Time Handling: Proficiency in handling date and time functions, including time zone considerations for financial data analysis.
+Constraint Management: Implementing constraints to maintain data integrity in accounting records, including primary keys, foreign keys, and unique constraints.
+View Creation: Designing views to simplify complex queries and enhance data presentation for financial reporting.
+Transaction Management: Utilising transactions to ensure data consistency and integrity in financial databases.
+
+
+-- Get the balance of a specific account
+SELECT AccountName, SUM(TransactionAmount) AS Balance
+FROM Accounts
+JOIN Transactions ON Accounts.AccountID = Transactions.AccountID
+WHERE AccountName = 'Savings Account'
+GROUP BY AccountName;
+
+-- Calculate the average transaction amount for each customer
+WITH AvgTransaction AS (
+    SELECT CustomerID, AVG(TransactionAmount) AS AvgAmount
+    FROM Transactions
+    GROUP BY CustomerID
+)
+SELECT Customers.CustomerName, AvgTransaction.AvgAmount
+FROM Customers
+JOIN AvgTransaction ON Customers.CustomerID = AvgTransaction.CustomerID;
+
+-- Calculate annual revenue, expenses, and profit
+SELECT 
+    YEAR(TransactionDate) AS Year,
+    SUM(CASE WHEN TransactionType = 'Revenue' THEN TransactionAmount ELSE 0 END) AS TotalRevenue,
+    SUM(CASE WHEN TransactionType = 'Expense' THEN TransactionAmount ELSE 0 END) AS TotalExpenses,
+    SUM(TransactionAmount) AS TotalProfit
+FROM Transactions
+GROUP BY YEAR(TransactionDate);
+
+-- Stored procedure to calculate interest
+CREATE PROCEDURE CalculateInterest @Rate DECIMAL(5, 2)
+AS
+BEGIN
+    UPDATE Accounts
+    SET Balance = Balance * (1 + @Rate / 100)
+    WHERE AccountType = 'Savings';
+
+-- Retrieve the previous year's salary amount for each employee
+WITH SalaryWithPreviousYear AS (
+    SELECT
+        [EmployeeID],
+        YEAR([EffectiveDate]) AS [Year],
+        SUM([SalaryAmount]) AS [TotalSalarySpend],
+        COUNT([SalaryAmount]) AS [TotalTransactionCount],
+        AVG([SalaryAmount]) AS [AverageTransactionAmount],
+        LAG(SUM([SalaryAmount])) OVER (PARTITION BY [EmployeeID] ORDER BY YEAR([EffectiveDate])) AS [PreviousYearTotalSalary]
+    FROM [dbo].[Salaries]
+    GROUP BY 
+        [EmployeeID],
+        YEAR([EffectiveDate])
+)
+
+SELECT 
+    [EmployeeID],
+    [Year],
+    [TotalSalarySpend],
+    [TotalTransactionCount],
+    [AverageTransactionAmount],
+    [PreviousYearTotalSalary]
+FROM SalaryWithPreviousYear;
