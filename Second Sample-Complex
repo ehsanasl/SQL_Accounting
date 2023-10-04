@@ -1,0 +1,59 @@
+
+
+-- Get the balance of a specific account
+SELECT AccountName, SUM(TransactionAmount) AS Balance
+FROM Accounts
+JOIN Transactions ON Accounts.AccountID = Transactions.AccountID
+WHERE AccountName = 'Savings Account'
+GROUP BY AccountName;
+
+-- Calculate the average transaction amount for each customer
+WITH AvgTransaction AS (
+    SELECT CustomerID, AVG(TransactionAmount) AS AvgAmount
+    FROM Transactions
+    GROUP BY CustomerID
+)
+SELECT Customers.CustomerName, AvgTransaction.AvgAmount
+FROM Customers
+JOIN AvgTransaction ON Customers.CustomerID = AvgTransaction.CustomerID;
+
+-- Calculate annual revenue, expenses, and profit
+SELECT 
+    YEAR(TransactionDate) AS Year,
+    SUM(CASE WHEN TransactionType = 'Revenue' THEN TransactionAmount ELSE 0 END) AS TotalRevenue,
+    SUM(CASE WHEN TransactionType = 'Expense' THEN TransactionAmount ELSE 0 END) AS TotalExpenses,
+    SUM(TransactionAmount) AS TotalProfit
+FROM Transactions
+GROUP BY YEAR(TransactionDate);
+
+-- Stored procedure to calculate interest
+CREATE PROCEDURE CalculateInterest @Rate DECIMAL(5, 2)
+AS
+BEGIN
+    UPDATE Accounts
+    SET Balance = Balance * (1 + @Rate / 100)
+    WHERE AccountType = 'Savings';
+
+-- Retrieve the previous year's salary amount for each employee
+WITH SalaryWithPreviousYear AS (
+    SELECT
+        [EmployeeID],
+        YEAR([EffectiveDate]) AS [Year],
+        SUM([SalaryAmount]) AS [TotalSalarySpend],
+        COUNT([SalaryAmount]) AS [TotalTransactionCount],
+        AVG([SalaryAmount]) AS [AverageTransactionAmount],
+        LAG(SUM([SalaryAmount])) OVER (PARTITION BY [EmployeeID] ORDER BY YEAR([EffectiveDate])) AS [PreviousYearTotalSalary]
+    FROM [dbo].[Salaries]
+    GROUP BY 
+        [EmployeeID],
+        YEAR([EffectiveDate])
+)
+
+SELECT 
+    [EmployeeID],
+    [Year],
+    [TotalSalarySpend],
+    [TotalTransactionCount],
+    [AverageTransactionAmount],
+    [PreviousYearTotalSalary]
+FROM SalaryWithPreviousYear;
